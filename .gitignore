@@ -17,6 +17,7 @@ server.log
 
 # Database files
 *.db
+*.sqlite3
 data.db
 
 # OS files
@@ -37,3 +38,6 @@ Thumbs.db
 .env
 .env.local
 .env.*
+
+# Temporary files
+tmp/
