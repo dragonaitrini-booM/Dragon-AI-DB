@@ -1,0 +1,37 @@
+# Binaries
+trini-pipeline
+encrypted-db
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Build output
+bin/
+
+# Output and logs
+output/
+logs/
+trini.log
+server.log
+
+# Database files
+*.db
+data.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Go module cache (not necessary to include typically)
+/pkg/
+
+# Secrets
+*.pem
+*.key
+.env
