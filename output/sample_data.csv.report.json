@@ -1,0 +1,17 @@
+{
+  "header": [
+    "filename",
+    "amount",
+    "region"
+  ],
+  "numeric_summary": {
+    "amount": {
+      "avg": 130000,
+      "count": 2,
+      "sum": 260000
+    }
+  },
+  "processed_at": "2025-10-27T13:58:13Z",
+  "rows": 2,
+  "source": "sample_data.csv"
+}

@@ -1,0 +1,8 @@
+nohup: ignoring input
+2025/10/27 13:58:01 worker 1 started
+2025/10/27 13:58:01 worker 2 started
+2025/10/27 13:58:01 worker 3 started
+2025/10/27 13:58:01 worker 4 started
+2025/10/27 13:58:01 worker 5 started
+2025/10/27 13:58:01 worker 6 started
+2025/10/27 13:58:13 worker 1 processing /workspaces/Dragon-AI-DB/input/sample_data.csv
