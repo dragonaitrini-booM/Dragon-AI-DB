@@ -30,6 +30,9 @@ func init() {
 func main() {
 	flag.Parse()
 
+	// Load configuration from environment or .env
+	LoadConfig()
+
 	// Ensure directories exist
 	if err := os.MkdirAll(inputDir, 0755); err != nil {
 		log.Fatalf("failed to create input dir: %v", err)
