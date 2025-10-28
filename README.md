@@ -1,111 +1,70 @@
-# Dragon-AI-DB
+# DataCentral T&T
 
-This repository contains two main components: a concurrent CSV processing pipeline and a minimal encrypted web server, both written in Go.
+Welcome to DataCentral T&T, your business data hub with a Trini touch! This application provides a secure and easy way to upload, store, and manage your business documents with robust encryption.
 
-## Concurrent CSV Processing Pipeline
+## Features
 
-A small, efficient, and concurrent CSV processing pipeline.
+-   **Secure File Upload**: Upload your important business documents (`.csv`, `.xlsx`, `.pdf`, `.txt`) with confidence.
+-   **Robust Encryption**: All uploaded file metadata is encrypted using AES-256-GCM with a key derived using PBKDF2, ensuring your data is secure.
+-   **Notion-Inspired UI**: A clean, modern, and mobile-first user interface inspired by Notion, tailored with the colors and spirit of Trinidad and Tobago.
+-   **Local & Ready**: Designed with the needs of T&T businesses in mind, with familiar terminology and a welcoming feel.
+-   **Scalable Storage**: Uses SQLite for reliable and scalable data storage, ready to grow with your business.
 
-### What it does
+## Getting Started
 
-- Watches an `input` directory for new CSV files (polling every 2 seconds by default).
-- Processes these files concurrently using a worker pool.
-- For each processed CSV, it generates a simple JSON report in an `output` directory.
-- Deletes the original CSV file upon successful processing.
+### Prerequisites
 
-### Getting Started
+-   Go 1.21 or later.
 
-#### Prerequisites
+### Running Locally
 
-- Go 1.21 or later installed and available on your `PATH`.
-
-#### Building
-
-From the repository root, run the following command to build the pipeline executable:
-
-```sh
-go build -o trini-pipeline
-```
-
-#### Running
-
-1.  Create the input and output directories:
+1.  **Clone the repository**:
     ```sh
-    mkdir -p input output
+    git clone <repository-url>
+    cd <repository-directory>
     ```
-2.  Run the pipeline with default settings:
+
+2.  **Install dependencies**:
     ```sh
-    ./trini-pipeline
+    go mod tidy
     ```
 
-#### Command-line Flags
-
-You can customize the pipeline's behavior using the following optional flags:
-
--   `-input`: The directory to watch for CSV files. (Default: `./input`)
--   `-output`: The directory where JSON reports will be written. (Default: `./output`)
--   `-workers`: The number of concurrent worker goroutines. (Default: `6`)
--   `-scan`: The frequency at which to scan the input directory. (Default: `2s`)
-
-Example:
-```sh
-./trini-pipeline -input /path/to/csvs -output /path/to/reports -workers 10 -scan 5s
-```
-
-### Try it Out
-
-1.  Start the pipeline: `./trini-pipeline`
-2.  Create a CSV file (e.g., `data.csv`) in the `./input` directory with some content:
-
-    ```csv
-    filename,amount,region
-    a.csv,100,NA
-    b.csv,200,EU
-    c.csv,300,APAC
+3.  **Build the application**:
+    ```sh
+    go build -o datacentral-tt
     ```
-3.  After a few seconds, you will see a corresponding JSON report (`data.csv.report.json`) in the `./output` directory.
 
-## Minimal Encrypted Server
+4.  **Run the application**:
+    ```sh
+    ./datacentral-tt
+    ```
 
-The repository also includes a minimal, standalone web server implemented in `encrypted_server.go`.
+The server will start on port `8080`. You can access the dashboard by opening `http://localhost:8080` in your web browser.
 
-### Purpose
+## Deployment
 
-This server is a demonstration of basic in-memory data encryption and decryption. It exposes a few simple API endpoints to add and query encrypted records, which are persisted to a local JSON file (`encrypted_records.json`).
+This application is designed for easy deployment to platforms like Railway.
 
-**Note:** This server is for demonstration purposes only and is **not** suitable for production use due to its simplified security practices (e.g., simple key derivation, local key storage).
+1.  **Create a `railway.json` file**:
+    ```json
+    {
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "deploy": {
+        "startCommand": "./datacentral-tt",
+        "restartPolicyType": "ON_FAILURE"
+      }
+    }
+    ```
 
-### Features
+2.  **Push to a GitHub repository and connect to Railway**. Railway will automatically build and deploy the application.
 
--   **Encryption**: Uses AES-256-GCM for authenticated encryption.
--   **Storage**: Persists encrypted records to a local JSON file.
--   **API**: Provides simple endpoints for health checks, adding sample data, and querying decrypted records.
+3.  **Set Environment Variables**: For production, set the `MASTER_KEY` environment variable to a strong, unique secret for encryption.
 
-### Running the Server
+## API Endpoints
 
-You can run the server directly using `go run`:
-
-```sh
-go run encrypted_server.go
-```
-
-The server will start on port `9090`. You can set the `MASTER_KEY` environment variable to provide a custom encryption key.
-
-### API Endpoints
-
--   `GET /health`: Returns the server's status and encryption configuration.
--   `POST /add_sample`: Creates a sample record, encrypts it, and saves it to the database file.
--   `GET /query`: Loads all records, decrypts them, and returns the plaintext data.
-
-## Project Structure
-
--   `main.go`: The main entry point for the CSV processing pipeline.
--   `processor.go`: Contains the core logic for reading, processing, and summarizing CSV files.
--   `config.go`: Handles loading configuration from environment variables and `.env` files.
--   `encrypted_server.go`: A standalone, minimal web server for demonstrating encryption.
--   `go.mod`: Go module definition.
--   `Dockerfile`: A sample Dockerfile for containerizing the pipeline.
-
-## Contributing
-
-Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details on how to contribute to this project.
+-   `GET /`: Serves the main HTML dashboard.
+-   `POST /upload`: Handles file uploads, encrypts the metadata, and stores it.
+-   `GET /query`: Retrieves and returns a list of all encrypted file records.
+-   `GET /health`: A health check endpoint that returns the status of the server.

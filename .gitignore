@@ -1,43 +1,6 @@
 # Binaries
-trini-pipeline
-encrypted-db
-*.exe
-*.dll
-*.so
-*.dylib
+datacentral-tt
+main
 
-# Build output
-bin/
-
-# Output and logs
-output/
-logs/
-trini.log
-server.log
-
-# Database files
-*.db
-*.sqlite3
+# Data files
 data.db
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
-.idea/
-*.swp
-
-# Go module cache (not necessary to include typically)
-/pkg/
-
-# Secrets
-*.pem
-*.key
-.env
-.env.local
-.env.*
-
-# Temporary files
-tmp/
