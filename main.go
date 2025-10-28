@@ -1,3 +1,6 @@
+// Package main implements a concurrent CSV processing pipeline.
+// It watches a directory for CSV files, processes them in a worker pool,
+// and generates JSON reports.
 package main
 
 import (
@@ -14,12 +17,17 @@ import (
 )
 
 var (
-	inputDir  string
+	// inputDir is the directory to watch for CSV files.
+	inputDir string
+	// outputDir is the directory where JSON reports are written.
 	outputDir string
-	workers   int
-	scanFreq  time.Duration
+	// workers is the number of concurrent workers in the pool.
+	workers int
+	// scanFreq is the frequency at which the input directory is scanned.
+	scanFreq time.Duration
 )
 
+// init initializes command-line flags.
 func init() {
 	flag.StringVar(&inputDir, "input", "./input", "input directory to watch for CSV files")
 	flag.StringVar(&outputDir, "output", "./output", "output directory for reports")
@@ -27,6 +35,9 @@ func init() {
 	flag.DurationVar(&scanFreq, "scan", 2*time.Second, "directory scan frequency")
 }
 
+// main is the entry point of the application.
+// It initializes the configuration, creates directories, starts the worker pool,
+// scans the input directory for files, and handles graceful shutdown.
 func main() {
 	flag.Parse()
 
@@ -95,6 +106,13 @@ func main() {
 	fmt.Println("done")
 }
 
+// worker represents a worker in the pool.
+// It receives file paths from the jobs channel, processes them, and handles errors.
+//
+// Parameters:
+//   ctx: The context for graceful shutdown.
+//   id: The worker's identifier.
+//   jobs: A channel to receive file paths for processing.
 func worker(ctx context.Context, id int, jobs <-chan string) {
 	log.Printf("worker %d started", id)
 	for {

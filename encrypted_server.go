@@ -23,20 +23,25 @@ var (
 	mu        sync.Mutex
 )
 
+// Envelope wraps the encrypted data with metadata required for decryption.
 type Envelope struct {
-	Algorithm string    `json:"algorithm"`
-	KeyID     string    `json:"key_id"`
-	Salt      string    `json:"salt"`
-	Nonce     string    `json:"nonce"`
-	Data      string    `json:"data"`
-	Timestamp time.Time `json:"timestamp"`
+	Algorithm string    `json:"algorithm"` // The encryption algorithm used (e.g., "AES-256-GCM").
+	KeyID     string    `json:"key_id"`     // An identifier for the key used.
+	Salt      string    `json:"salt"`       // The salt used in key derivation (hex-encoded).
+	Nonce     string    `json:"nonce"`      // The nonce used for encryption (hex-encoded).
+	Data      string    `json:"data"`       // The encrypted data (ciphertext, hex-encoded).
+	Timestamp time.Time `json:"timestamp"`  // The UTC timestamp of when the data was encrypted.
 }
 
+// Record represents a single encrypted record stored in the database file.
 type Record struct {
-	Source string `json:"source"`
-	Env    string `json:"envelope"`
+	Source string `json:"source"` // The source or identifier for the record.
+	Env    string `json:"envelope"` // The JSON-marshaled Envelope containing the encrypted data.
 }
 
+// deriveKey derives a 32-byte key from a password and salt using SHA-256.
+// This is a simple Key Derivation Function for demonstration purposes only.
+// For production use, a stronger KDF like PBKDF2 or Argon2 should be used.
 func deriveKey(password string, salt []byte) []byte {
 	// Simple KDF for demo only: SHA256(password || salt). For real usage use PBKDF2 or HKDF.
 	h := sha256.New()
@@ -45,6 +50,10 @@ func deriveKey(password string, salt []byte) []byte {
 	return h.Sum(nil)
 }
 
+// encrypt encrypts a plaintext byte slice using AES-256-GCM.
+// It generates a new random salt for key derivation and a new random nonce for
+// each encryption operation. The resulting ciphertext and its metadata are
+// returned in an Envelope.
 func encrypt(plaintext []byte) (Envelope, error) {
 	salt := make([]byte, 16)
 	if _, err := crand.Read(salt); err != nil {
@@ -75,6 +84,9 @@ func encrypt(plaintext []byte) (Envelope, error) {
 	return env, nil
 }
 
+// decrypt decrypts the ciphertext contained in an Envelope.
+// It re-derives the encryption key using the master key and the salt from the
+// envelope, then attempts to authenticate and decrypt the data using AES-256-GCM.
 func decrypt(env Envelope) ([]byte, error) {
 	salt, err := hex.DecodeString(env.Salt)
 	if err != nil {
@@ -104,6 +116,9 @@ func decrypt(env Envelope) ([]byte, error) {
 	return pt, nil
 }
 
+// loadRecords reads and deserializes all records from the database file.
+// It acquires a mutex lock to ensure thread-safe access to the file.
+// If the file does not exist, it returns an empty slice of records.
 func loadRecords() ([]Record, error) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -121,6 +136,9 @@ func loadRecords() ([]Record, error) {
 	return recs, nil
 }
 
+// saveRecords serializes and writes a slice of records to the database file.
+// It acquires a mutex lock for thread-safe file access and sets file
+// permissions to 0600 for security.
 func saveRecords(recs []Record) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -131,6 +149,8 @@ func saveRecords(recs []Record) error {
 	return os.WriteFile(dbFile, b, 0600)
 }
 
+// handleHealth is an HTTP handler for the /health endpoint.
+// It returns a JSON response indicating the server status and encryption details.
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -141,6 +161,9 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleAddSample is an HTTP handler for the /add_sample endpoint.
+// It creates and encrypts a sample metadata payload, adds it to the database,
+// and returns a confirmation response.
 func handleAddSample(w http.ResponseWriter, r *http.Request) {
 	// Create a small sample metadata payload and encrypt it
 	meta := map[string]interface{}{
@@ -169,15 +192,22 @@ func handleAddSample(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "sample added"})
 }
 
+// toJSON is a convenience function to marshal an interface to a JSON string.
+// It ignores errors for simplicity, which is suitable for internal use where
+// the input is controlled.
 func toJSON(v interface{}) string {
 	b, _ := json.Marshal(v)
 	return string(b)
 }
 
+// fromJSON is a convenience function to unmarshal a JSON string into an interface.
 func fromJSON(s string, v interface{}) error {
 	return json.Unmarshal([]byte(s), v)
 }
 
+// handleQuery is an HTTP handler for the /query endpoint.
+// It loads all records from the database, decrypts them, and returns the
+// plaintext metadata in a JSON response.
 func handleQuery(w http.ResponseWriter, r *http.Request) {
 	recs, err := loadRecords()
 	if err != nil {

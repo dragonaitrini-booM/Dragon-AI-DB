@@ -11,7 +11,20 @@ import (
 	"time"
 )
 
-// processAndReport reads a CSV file at path, computes a tiny summary and writes a JSON report to outputDir.
+// processAndReport reads and processes a CSV file from the given path.
+// It calculates a summary of the data, including the number of rows and a
+// summary of any numeric columns (sum, count, average).
+//
+// A JSON report is written to the outputDir with the naming convention
+// `<original_filename>.report.json`.
+//
+// Parameters:
+//   path: The absolute path to the CSV file to be processed.
+//   outputDir: The directory where the JSON report will be written.
+//
+// Returns:
+//   An error if any step of the process fails (file opening, reading, report creation, or writing),
+//   otherwise nil.
 func processAndReport(path string, outputDir string) error {
 	f, err := os.Open(path)
 	if err != nil {
