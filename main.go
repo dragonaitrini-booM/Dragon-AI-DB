@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -48,11 +49,29 @@ type Envelope struct {
 }
 
 type Record struct {
-	ID        int    `json:"id"`
-	Source    string `json:"source"`
-	Env       string `json:"envelope"`
-	Size      int64  `json:"size"`
-	Tag       string `json:"tag"`
+	ID     int    `json:"id"`
+	Source string `json:"source"`
+	Env    string `json:"envelope"`
+	Size   int64  `json:"size"`
+	Tag    string `json:"tag"`
+}
+
+// Structs for Kimi API communication
+type KimiRequest struct {
+	Model       string    `json:"model"`
+	Messages    []Message `json:"messages"`
+	Temperature float64   `json:"temperature"`
+}
+
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type KimiResponse struct {
+	Choices []struct {
+		Message Message `json:"message"`
+	} `json:"choices"`
 }
 
 func init() {
@@ -299,6 +318,72 @@ func handleQuery(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func handleAskKimi(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var userInput struct {
+		Prompt string `json:"prompt"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	apiKey := os.Getenv("MOONSHOT_API_KEY")
+	if apiKey == "" {
+		log.Println("MOONSHOT_API_KEY is not set.")
+		http.Error(w, "AI service is not configured", http.StatusInternalServerError)
+		return
+	}
+
+	kimiReq := KimiRequest{
+		Model: "kimi-k2-0905-preview",
+		Messages: []Message{
+			{Role: "system", Content: "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一切涉及恐怖主义，种族歧视，黄色暴力等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。"},
+			{Role: "user", Content: userInput.Prompt},
+		},
+		Temperature: 0.6,
+	}
+
+	reqBody, err := json.Marshal(kimiReq)
+	if err != nil {
+		http.Error(w, "Failed to create AI request", http.StatusInternalServerError)
+		return
+	}
+
+	req, err := http.NewRequest("POST", "https://api.moonshot.cn/v1/chat/completions", bytes.NewBuffer(reqBody))
+	if err != nil {
+		http.Error(w, "Failed to create AI request", http.StatusInternalServerError)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "Failed to communicate with AI service", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	var kimiResp KimiResponse
+	if err := json.NewDecoder(resp.Body).Decode(&kimiResp); err != nil {
+		http.Error(w, "Failed to parse AI response", http.StatusInternalServerError)
+		return
+	}
+
+	if len(kimiResp.Choices) > 0 {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"reply": kimiResp.Choices[0].Message.Content})
+	} else {
+		http.Error(w, "No response from AI", http.StatusInternalServerError)
+	}
+}
+
 func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	html := `<!DOCTYPE html>
 <html lang="en">
@@ -437,6 +522,13 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             </div>
             <button onclick="loadFiles()">Check Yuh Encrypted Files</button>
             <div id="fileList" class="file-list"></div>
+
+            <div class="ai-section" style="margin-top: 40px;">
+                <h2>Ask Kimi for Insights</h2>
+                <textarea id="ai-prompt" placeholder="Ask a question about yuh data..." style="width: 100%; min-height: 80px; padding: 8px; border-radius: 6px; border: 1px solid #e9e9e7;"></textarea>
+                <button onclick="askKimi()" style="margin-top: 10px;">Get Insights</button>
+                <div id="ai-response" style="margin-top: 20px; padding: 16px; background: #f7f7f5; border-radius: 6px; min-height: 50px;"></div>
+            </div>
         </div>
     </div>
     <script>
@@ -468,6 +560,37 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 document.getElementById('fileList').innerHTML = 'Error loading files, mi amor.';
             }
         }
+
+        async function askKimi() {
+            const prompt = document.getElementById('ai-prompt').value;
+            if (!prompt) {
+                alert('Please enter a question for Kimi.');
+                return;
+            }
+
+            const responseDiv = document.getElementById('ai-response');
+            responseDiv.innerText = 'Thinking...';
+
+            try {
+                const response = await fetch('/ask-kimi', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get a response from the AI.');
+                }
+
+                const result = await response.json();
+                responseDiv.innerText = result.reply;
+            } catch (error) {
+                responseDiv.innerText = 'An error occurred, mi amor. Please try again.';
+                console.error('Error asking Kimi:', error);
+            }
+        }
     </script>
 </body>
 </html>`
@@ -493,6 +616,7 @@ func main() {
 	http.HandleFunc("/health", handleHealth)
 	http.HandleFunc("/upload", handleUpload)
 	http.HandleFunc("/query", handleQuery)
+	http.HandleFunc("/ask-kimi", handleAskKimi)
 	http.HandleFunc("/", handleDashboard)
 
 	srv := &http.Server{Addr: ":" + port}
