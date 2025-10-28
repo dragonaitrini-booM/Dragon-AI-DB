@@ -1,0 +1,48 @@
+.query-history {
+  background-color: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  padding: 1rem;
+  width: 300px;
+}
+
+.query-history-title {
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+}
+
+.query-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.query-history-item {
+  padding: 0.75rem;
+  background-color: var(--color-background);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.query-history-item:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.query-history-command {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.query-history-date {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.query-history-loading,
+.query-history-error {
+  padding: 1rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+}

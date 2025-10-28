@@ -47,7 +47,7 @@ func main() {
 	defer db.Close()
 
 	// Initialize AI service
-	aiService := ai.NewService(config.KimiAPIKey, logger)
+	aiService := ai.NewService(config.KimiAPIKey, config.RedisURL, logger)
 
 	// Initialize auth service
 	authService := auth.NewService(config.JWTSecret, db.DB, logger)
@@ -59,9 +59,10 @@ func main() {
 	r := mux.NewRouter()
 
 	// Middleware
+	r.Use(middleware.Gzip)
 	r.Use(middleware.Logging(logger))
 	r.Use(middleware.Recovery(logger))
-	// r.Use(middleware.RateLimit())
+	r.Use(middleware.RateLimit())
 
 	// Public routes
 	r.HandleFunc("/health", h.HealthCheck).Methods("GET")
@@ -93,6 +94,10 @@ func main() {
 	protected.HandleFunc("/dashboards/{id}", h.GetDashboard).Methods("GET")
 	protected.HandleFunc("/dashboards/{id}", h.UpdateDashboard).Methods("PUT")
 	protected.HandleFunc("/dashboards/{id}", h.DeleteDashboard).Methods("DELETE")
+
+	// History endpoints
+	protected.HandleFunc("/history", h.GetHistory).Methods("GET")
+	protected.HandleFunc("/history", h.SaveHistory).Methods("POST")
 
 	// Setup CORS
 	c := cors.New(cors.Options{

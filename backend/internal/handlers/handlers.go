@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -12,6 +14,8 @@ import (
 	"ai-database-app/internal/auth"
 	"ai-database-app/internal/database"
 	"github.com/gorilla/mux"
+	"github.com/jung-kurt/gofpdf"
+	"github.com/xuri/excelize/v2"
 )
 
 type Handlers struct {
@@ -333,18 +337,146 @@ func (h *Handlers) writeError(w http.ResponseWriter, status int, message string,
 	h.writeJSON(w, status, errorResp)
 }
 
+// History endpoints
+func (h *Handlers) GetHistory(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id").(string)
+
+	history, err := h.db.GetQueryHistory(userID)
+	if err != nil {
+		h.writeError(w, http.StatusInternalServerError, "failed to get query history", err)
+		return
+	}
+
+	h.writeJSON(w, http.StatusOK, map[string]any{
+		"history": history,
+	})
+}
+
+func (h *Handlers) SaveHistory(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id").(string)
+
+	var req struct {
+		Command string `json:"command"`
+		Results json.RawMessage `json:"results"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.writeError(w, http.StatusBadRequest, "invalid request body", err)
+		return
+	}
+
+	if err := h.db.SaveQueryHistory(userID, req.Command, req.Results); err != nil {
+		h.writeError(w, http.StatusInternalServerError, "failed to save query history", err)
+		return
+	}
+
+	h.writeJSON(w, http.StatusCreated, map[string]any{
+		"message": "Query history saved successfully",
+	})
+}
+
 // Placeholder implementations for export functions
 func (h *Handlers) generatePDF(title string, chartSpec map[string]any, tableData []map[string]any, insights []string) ([]byte, error) {
-	// Implement PDF generation using a library like gofpdf or wkhtmltopdf
-	return nil, fmt.Errorf("PDF generation not implemented")
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(40, 10, title)
+	pdf.Ln(20)
+
+	if len(insights) > 0 {
+		pdf.SetFont("Arial", "B", 12)
+		pdf.Cell(40, 10, "Key Insights")
+		pdf.Ln(10)
+		pdf.SetFont("Arial", "", 12)
+		for _, insight := range insights {
+			pdf.MultiCell(0, 10, "- "+insight, "", "", false)
+			pdf.Ln(5)
+		}
+	}
+
+	if len(tableData) > 0 {
+		pdf.SetFont("Arial", "B", 12)
+		pdf.Cell(40, 10, "Data Table")
+		pdf.Ln(10)
+		pdf.SetFont("Arial", "", 10)
+		headers := []string{}
+		for k := range tableData[0] {
+			headers = append(headers, k)
+		}
+		for _, h := range headers {
+			pdf.Cell(40, 7, h)
+		}
+		pdf.Ln(-1)
+		for _, row := range tableData {
+			for _, h := range headers {
+				pdf.Cell(40, 7, fmt.Sprintf("%v", row[h]))
+			}
+			pdf.Ln(-1)
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := pdf.Output(&buf); err != nil {
+		return nil, fmt.Errorf("failed to generate PDF: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
 func (h *Handlers) generateExcel(tableData []map[string]any, sheetName string) ([]byte, error) {
-	// Implement Excel generation using a library like excelize
-	return nil, fmt.Errorf("Excel generation not implemented")
+	f := excelize.NewFile()
+	if _, err := f.NewSheet(sheetName); err != nil {
+		return nil, fmt.Errorf("failed to create new sheet: %w", err)
+	}
+	f.DeleteSheet("Sheet1")
+
+	if len(tableData) > 0 {
+		headers := []string{}
+		for k := range tableData[0] {
+			headers = append(headers, k)
+		}
+		for i, h := range headers {
+			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+			f.SetCellValue(sheetName, cell, h)
+		}
+		for i, row := range tableData {
+			for j, h := range headers {
+				cell, _ := excelize.CoordinatesToCellName(j+1, i+2)
+				f.SetCellValue(sheetName, cell, row[h])
+			}
+		}
+	}
+
+	buf, err := f.WriteToBuffer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to write excel buffer: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
 func (h *Handlers) generateCSV(tableData []map[string]any) ([]byte, error) {
-	// Implement CSV generation
-	return nil, fmt.Errorf("CSV generation not implemented")
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+
+	if len(tableData) > 0 {
+		headers := []string{}
+		for k := range tableData[0] {
+			headers = append(headers, k)
+		}
+		if err := writer.Write(headers); err != nil {
+			return nil, err
+		}
+
+		for _, row := range tableData {
+			record := []string{}
+			for _, h := range headers {
+				record = append(record, fmt.Sprintf("%v", row[h]))
+			}
+			if err := writer.Write(record); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	writer.Flush()
+	return buf.Bytes(), nil
 }

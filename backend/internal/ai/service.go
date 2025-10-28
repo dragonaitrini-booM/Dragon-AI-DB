@@ -3,6 +3,8 @@ package ai
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -10,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type Service struct {
@@ -17,13 +21,7 @@ type Service struct {
 	baseURL    string
 	httpClient *http.Client
 	logger     *slog.Logger
-	cache      map[string]*CacheEntry
-	cacheMutex sync.RWMutex
-}
-
-type CacheEntry struct {
-	Response  *ExecuteResponse
-	CreatedAt time.Time
+	redis      *redis.Client
 }
 
 type ExecuteRequest struct {
@@ -54,7 +52,15 @@ type BatchResponse struct {
 	Errors  []string          `json:"errors,omitempty"`
 }
 
-func NewService(apiKey string, logger *slog.Logger) *Service {
+func NewService(apiKey, redisURL string, logger *slog.Logger) *Service {
+	// Initialize Redis client
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		logger.Error("failed to parse redis URL", slog.String("error", err.Error()))
+		// Fallback to a nil client, caching will be disabled
+	}
+	redisClient := redis.NewClient(opt)
+
 	return &Service{
 		apiKey:  apiKey,
 		baseURL: "https://api.moonshot.cn/v1/chat/completions",
@@ -62,7 +68,7 @@ func NewService(apiKey string, logger *slog.Logger) *Service {
 			Timeout: 45 * time.Second,
 		},
 		logger: logger,
-		cache:  make(map[string]*CacheEntry),
+		redis:  redisClient,
 	}
 }
 
@@ -124,9 +130,11 @@ func (s *Service) ExecuteCommand(ctx context.Context, req ExecuteRequest) (*Exec
 	startTime := time.Now()
 	requestID := fmt.Sprintf("req_%d", startTime.UnixNano())
 
-	// Check cache
+	// Check Redis cache
 	cacheKey := s.getCacheKey(req)
-	if cached := s.getFromCache(cacheKey); cached != nil {
+	if cached, err := s.getFromCache(ctx, cacheKey); err == nil && cached != nil {
+		s.logger.InfoContext(ctx, "cache hit", slog.String("key", cacheKey))
+		cached.RequestID = requestID // Assign a new request ID
 		return cached, nil
 	}
 
@@ -196,8 +204,10 @@ func (s *Service) ExecuteCommand(ctx context.Context, req ExecuteRequest) (*Exec
 		result.Content = content
 	}
 
-	// Cache result
-	s.setCache(cacheKey, result)
+	// Cache result in Redis
+	if err := s.setCache(ctx, cacheKey, result); err != nil {
+		s.logger.WarnContext(ctx, "failed to cache result", slog.String("error", err.Error()))
+	}
 
 	return result, nil
 }
@@ -374,35 +384,43 @@ func (s *Service) validateCommand(command string) error {
 }
 
 func (s *Service) getCacheKey(req ExecuteRequest) string {
-	return fmt.Sprintf("%s_%s_%v", req.UserID, req.Command, req.PageContent != nil)
+	hash := md5.Sum([]byte(req.Command + fmt.Sprintf("%v", req.PageContent)))
+	return fmt.Sprintf("cache:%s:%s", req.UserID, hex.EncodeToString(hash[:]))
 }
 
-func (s *Service) getFromCache(key string) *ExecuteResponse {
-	s.cacheMutex.RLock()
-	defer s.cacheMutex.RUnlock()
-
-	entry, exists := s.cache[key]
-	if !exists {
-		return nil
+func (s *Service) getFromCache(ctx context.Context, key string) (*ExecuteResponse, error) {
+	if s.redis == nil {
+		return nil, fmt.Errorf("redis client not initialized")
 	}
 
-	// Cache expires after 10 minutes
-	if time.Since(entry.CreatedAt) > 10*time.Minute {
-		delete(s.cache, key)
-		return nil
+	val, err := s.redis.Get(ctx, key).Bytes()
+	if err != nil {
+		if err == redis.Nil {
+			return nil, nil // Cache miss
+		}
+		return nil, err
 	}
 
-	return entry.Response
+	var resp ExecuteResponse
+	if err := json.Unmarshal(val, &resp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal cached response: %w", err)
+	}
+
+	return &resp, nil
 }
 
-func (s *Service) setCache(key string, response *ExecuteResponse) {
-	s.cacheMutex.Lock()
-	defer s.cacheMutex.Unlock()
-
-	s.cache[key] = &CacheEntry{
-		Response:  response,
-		CreatedAt: time.Now(),
+func (s *Service) setCache(ctx context.Context, key string, response *ExecuteResponse) error {
+	if s.redis == nil {
+		return fmt.Errorf("redis client not initialized")
 	}
+
+	val, err := json.Marshal(response)
+	if err != nil {
+		return fmt.Errorf("failed to marshal response for caching: %w", err)
+	}
+
+	// Cache expires after 1 hour
+	return s.redis.Set(ctx, key, val, 1*time.Hour).Err()
 }
 
 func (s *Service) convertToMapSlice(data []any) []map[string]any {

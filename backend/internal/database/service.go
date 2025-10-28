@@ -58,6 +58,14 @@ type QueryResult struct {
 	Duration time.Duration    `json:"duration"`
 }
 
+type QueryHistoryItem struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
+	Command   string    `json:"command"`
+	Results   []byte    `json:"results"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 func NewConnection(databaseURL string) (*Connection, error) {
 	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
@@ -362,4 +370,43 @@ func (s *Service) GetTableSchema(tableName string) (*TableInfo, error) {
 	}
 
 	return nil, fmt.Errorf("table not found: %s", tableName)
+}
+
+func (s *Service) GetQueryHistory(userID string) ([]QueryHistoryItem, error) {
+	query := `
+		SELECT id, user_id, command, results, created_at
+		FROM query_history
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+		LIMIT 50
+	`
+
+	rows, err := s.db.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query history: %w", err)
+	}
+	defer rows.Close()
+
+	var history []QueryHistoryItem
+	for rows.Next() {
+		var item QueryHistoryItem
+		if err := rows.Scan(&item.ID, &item.UserID, &item.Command, &item.Results, &item.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan history item: %w", err)
+		}
+		history = append(history, item)
+	}
+
+	return history, nil
+}
+
+func (s *Service) SaveQueryHistory(userID, command string, results []byte) error {
+	query := `
+		INSERT INTO query_history (user_id, command, results)
+		VALUES ($1, $2, $3)
+	`
+	_, err := s.db.Exec(query, userID, command, results)
+	if err != nil {
+		return fmt.Errorf("failed to save history: %w", err)
+	}
+	return nil
 }

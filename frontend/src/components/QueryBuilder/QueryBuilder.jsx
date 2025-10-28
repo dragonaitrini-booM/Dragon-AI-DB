@@ -8,6 +8,8 @@ import { databaseService } from '../../services/databaseService';
 import ChartRenderer from '../Charts/ChartRenderer';
 import DataTable from '../DataTable/DataTable';
 import ExportButtons from '../Export/ExportButtons';
+import QueryHistory from '../QueryHistory/QueryHistory';
+import { historyService } from '../../services/historyService';
 
 import './QueryBuilder.css';
 
@@ -39,6 +41,8 @@ const QueryBuilder = () => {
     onSuccess: (data) => {
       setResults(data);
       toast.success('Command executed successfully!');
+      // Save to history
+      historyService.saveHistory(command, data);
     },
     onError: (error) => {
       console.error('Execution failed:', error);
@@ -89,6 +93,11 @@ Row Count: ${tableSchema.row_count}
     }
   };
 
+  const handleSelectHistory = (item) => {
+    setCommand(item.command);
+    setResults(JSON.parse(item.results));
+  };
+
   return (
     <div className="query-builder">
       <div className="query-builder-header">
@@ -97,11 +106,12 @@ Row Count: ${tableSchema.row_count}
       </div>
 
       <div className="query-builder-content">
-        {/* Left Panel - Input */}
-        <div className="input-panel">
-          <div className="input-section">
-            <label className="input-label">
-              Natural Language Command
+        <div className="main-panel">
+          {/* Left Panel - Input */}
+          <div className="input-panel">
+            <div className="input-section">
+              <label className="input-label">
+                Natural Language Command
             </label>
             <textarea
               value={command}
@@ -262,6 +272,8 @@ Row Count: ${tableSchema.row_count}
             </div>
           )}
         </div>
+        </div>
+        <QueryHistory onSelectHistory={handleSelectHistory} />
       </div>
     </div>
   );

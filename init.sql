@@ -26,3 +26,12 @@ INSERT INTO sales_data (date, product, revenue, units_sold, region) VALUES
 ('2023-01-02', 'Product B', 800.25, 16, 'South'),
 ('2023-01-03', 'Product A', 1500.75, 30, 'East'),
 ('2023-01-04', 'Product C', 950.00, 19, 'West');
+
+-- Query History table
+CREATE TABLE query_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    command TEXT NOT NULL,
+    results JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
