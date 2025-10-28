@@ -3,7 +3,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "./main",
+    "startCommand": "./datacentral-tt",
     "restartPolicyType": "ON_FAILURE"
   }
 }

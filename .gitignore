@@ -4,3 +4,6 @@ main
 
 # Data files
 data.db
+
+# Environment files
+.env

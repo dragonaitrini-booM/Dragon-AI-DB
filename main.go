@@ -6,7 +6,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -21,12 +20,12 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/pbkdf2"
+	"github.com/supabase-community/supabase-go"
+	storage_go "github.com/supabase-community/storage-go"
 )
 
 const (
-	dbFile        = "data.db"
 	maxFileSize   = 32 << 20 // 32 MB
 	keyIterations = 100000   // PBKDF2 iterations
 	keyLength     = 32       // AES-256
@@ -34,9 +33,9 @@ const (
 )
 
 var (
-	masterKey = "TriniSecure2025!" // Replace with env var in production
-	db        *sql.DB
-	mu        sync.Mutex
+	masterKey      = "TriniSecure2025!" // Replace with env var in production
+	supabaseClient *supabase.Client
+	mu             sync.Mutex
 )
 
 type Envelope struct {
@@ -75,31 +74,23 @@ type KimiResponse struct {
 }
 
 func init() {
-	var err error
-	db, err = sql.Open("sqlite3", dbFile)
-	if err != nil {
-		log.Fatal("Database connection failed:", err)
-	}
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_KEY")
 
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS records (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			source TEXT NOT NULL,
-			envelope TEXT NOT NULL,
-			size INTEGER NOT NULL,
-			tag TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		);
-		CREATE INDEX IF NOT EXISTS idx_source ON records(source);
-	`)
-	if err != nil {
-		log.Fatal("Database schema creation failed:", err)
+	if supabaseURL == "" || supabaseKey == "" {
+		log.Println("Warning: SUPABASE_URL and SUPABASE_KEY are not set. Database features will be disabled.")
+	} else {
+		var err error
+		supabaseClient, err = supabase.NewClient(supabaseURL, supabaseKey, nil)
+		if err != nil {
+			log.Fatal("Failed to initialize Supabase client:", err)
+		}
+		log.Println("Supabase client initialized, mi amor!")
 	}
 
 	if v := os.Getenv("MASTER_KEY"); v != "" {
 		masterKey = v
 	}
-	log.Println("Database and key initialized, mi amor!")
 }
 
 func deriveKey(password string, salt []byte) []byte {
@@ -184,6 +175,10 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUpload(w http.ResponseWriter, r *http.Request) {
+	if supabaseClient == nil {
+		http.Error(w, "Database is not configured", http.StatusInternalServerError)
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -236,14 +231,38 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mu.Lock()
-	_, err = db.Exec(
-		"INSERT INTO records (source, envelope, size, tag) VALUES (?, ?, ?, ?)",
-		header.Filename, toJSON(env), len(fileData), r.FormValue("tag"),
-	)
-	mu.Unlock()
+	// Seek back to the beginning of the file to re-read for storage upload
+	file.Seek(0, 0)
+
+	// Upload file to Supabase Storage
+	bucketName := "datacentral-files"
+	contentType := "application/octet-stream" // Default content type
+	if len(fileData) > 512 {
+		contentType = http.DetectContentType(fileData[:512])
+	}
+	storageClient := storage_go.NewClient(os.Getenv("SUPABASE_URL")+"/storage/v1", os.Getenv("SUPABASE_KEY"), nil)
+	_, err = storageClient.UploadFile(bucketName, header.Filename, file, storage_go.FileOptions{ContentType: &contentType})
 	if err != nil {
-		log.Printf("Database insert error: %v", err)
+		// Check if the error is a duplicate file error, which we can ignore for this logic
+		if !strings.Contains(err.Error(), "The resource already exists") {
+			log.Printf("Supabase storage upload error: %v", err)
+			http.Error(w, "File storage failed", http.StatusInternalServerError)
+			return
+		}
+	}
+
+
+	// Insert into Supabase
+	insertData := map[string]interface{}{
+		"source":   header.Filename,
+		"envelope": toJSON(env),
+		"size":     len(fileData),
+		"tag":      r.FormValue("tag"),
+	}
+	var inserted []map[string]interface{}
+	_, err = supabaseClient.From("records").Insert(insertData, false, "", "", "").ExecuteTo(&inserted)
+	if err != nil {
+		log.Printf("Supabase insert error: %v", err)
 		http.Error(w, "Database storage failed", http.StatusInternalServerError)
 		return
 	}
@@ -261,29 +280,22 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleQuery(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`
-		SELECT id, source, envelope, size, tag
-		FROM records
-		ORDER BY created_at DESC
-	`)
+	if supabaseClient == nil {
+		json.NewEncoder(w).Encode(map[string]interface{}{"status": "success", "results": []Record{}, "total": 0})
+		return
+	}
+	var results []Record
+	_, err := supabaseClient.From("records").Select("*", "exact", false).ExecuteTo(&results)
 	if err != nil {
-		log.Printf("Query error: %v", err)
+		log.Printf("Supabase query error: %v", err)
 		http.Error(w, "Database query failed", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
 
 	var out []map[string]interface{}
-	for rows.Next() {
-		var rec Record
-		var envStr string
-		if err := rows.Scan(&rec.ID, &rec.Source, &envStr, &rec.Size, &rec.Tag); err != nil {
-			log.Printf("Row scan error: %v", err)
-			continue
-		}
-
+	for _, rec := range results {
 		var env Envelope
-		if err := fromJSON(envStr, &env); err != nil {
+		if err := fromJSON(rec.Env, &env); err != nil {
 			log.Printf("Envelope parse error: %v", err)
 			continue
 		}
@@ -316,6 +328,46 @@ func handleQuery(w http.ResponseWriter, r *http.Request) {
 		"results": out,
 		"total":   len(out),
 	})
+}
+
+func handleDeleteFile(w http.ResponseWriter, r *http.Request) {
+	if supabaseClient == nil {
+		http.Error(w, "Database is not configured", http.StatusInternalServerError)
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var fileInfo struct {
+		Filename string `json:"filename"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&fileInfo); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Delete from Supabase Storage
+	bucketName := "datacentral-files"
+	storageClient := storage_go.NewClient(os.Getenv("SUPABASE_URL")+"/storage/v1", os.Getenv("SUPABASE_KEY"), nil)
+	_, err := storageClient.RemoveFile(bucketName, []string{fileInfo.Filename})
+	if err != nil {
+		log.Printf("Supabase storage delete error: %v", err)
+		// We can continue even if the file doesn't exist in storage, to ensure metadata is cleaned up
+	}
+
+	// Delete from Supabase Database
+	var results []map[string]interface{}
+	_, err = supabaseClient.From("records").Delete("", "").Eq("source", fileInfo.Filename).ExecuteTo(&results)
+	if err != nil {
+		log.Printf("Supabase database delete error: %v", err)
+		http.Error(w, "Database delete failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "File deleted successfully"})
 }
 
 func handleAskKimi(w http.ResponseWriter, r *http.Request) {
@@ -553,11 +605,38 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 const data = await response.json();
                 let html = '<h3>Yuh Encrypted Files (' + data.total + ')</h3>';
                 data.results.forEach(file => {
-                    html += '<p><strong>' + file.source + '</strong> - ' + file.size + ' bytes - ' + file.processed_at + ' (Tag: ' + (file.tag || 'None') + ')</p>';
+                    html += "<p><strong>" + file.source + "</strong> - " + file.size + " bytes - " + file.processed_at + " (Tag: " + (file.tag || 'None') + ") <button onclick=\"deleteFile('" + file.source + "')\" style=\"margin-left: 10px; background: #333; color: white; border-radius: 4px; padding: 2px 8px;\">Delete</button></p>";
                 });
                 document.getElementById('fileList').innerHTML = html;
             } catch (error) {
                 document.getElementById('fileList').innerHTML = 'Error loading files, mi amor.';
+            }
+        }
+
+        async function deleteFile(filename) {
+            if (!confirm("Are you sure you want to delete " + filename + "?")) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/delete-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ filename: filename }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete the file.');
+                }
+
+                const result = await response.json();
+                alert(result.message);
+                loadFiles(); // Refresh the list
+            } catch (error) {
+                alert('An error occurred while deleting the file.');
+                console.error('Error deleting file:', error);
             }
         }
 
@@ -616,6 +695,7 @@ func main() {
 	http.HandleFunc("/health", handleHealth)
 	http.HandleFunc("/upload", handleUpload)
 	http.HandleFunc("/query", handleQuery)
+	http.HandleFunc("/delete-file", handleDeleteFile)
 	http.HandleFunc("/ask-kimi", handleAskKimi)
 	http.HandleFunc("/", handleDashboard)
 
