@@ -1,76 +1,105 @@
-# DataCentral T&T
+# AI Database Application
 
-Welcome to DataCentral T&T, your business data hub with a Trini touch! This application provides a secure and easy way to upload, store, and manage your business documents with robust encryption.
+This is a full-stack, production-grade AI database application. It features a powerful Go backend and a modern React frontend, designed for intuitive data analysis and visualization.
 
 ## Features
 
--   **Secure File Upload**: Upload your important business documents (`.csv`, `.xlsx`, `.pdf`, `.txt`) with confidence.
--   **Robust Encryption**: All uploaded file metadata is encrypted using AES-256-GCM with a key derived using PBKDF2, ensuring your data is secure.
--   **AI-Powered Insights**: Integrated with the Kimi AI (Moonshot AI) to provide intelligent insights and answers to your questions.
--   **Notion-Inspired UI**: A clean, modern, and mobile-first user interface inspired by Notion, tailored with the colors and spirit of Trinidad and Tobago.
--   **Cloud-Powered**: Uses Supabase for scalable, secure, and reliable data storage.
--   **Local & Ready**: Designed with the needs of T&T businesses in mind, with familiar terminology and a welcoming feel.
+- **Production-ready Go backend** with AI integration
+- **Modern React frontend** with real-time features
+- **Secure authentication** with JWT tokens
+- **AI-powered data analysis** with natural language processing
+- **Advanced visualizations** with Chart.js optimization
+- **Database integration** with query validation
+- **Export capabilities** (PDF, Excel, CSV)
+- **Docker deployment** ready
+- **Comprehensive error handling** and logging
+- **Mobile-responsive design**
 
-## Getting Started
+## Project Structure
 
-### Prerequisites
+```
+ai-database-app/
+├── backend/
+│   ├── cmd/
+│   │   └── server/
+│   │       └── main.go
+│   ├── internal/
+│   │   ├── ai/
+│   │   ├── auth/
+│   │   ├── database/
+│   │   ├── handlers/
+│   │   └── middleware/
+│   ├── pkg/
+│   └── go.mod
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   └── utils/
+│   ├── package.json
+│   └── vite.config.js
+└── docker-compose.yml
+```
 
--   Go 1.21 or later.
+## Quick Start
 
-### Running Locally
+### 1. Backend Setup
 
-1.  **Clone the repository**:
-    ```sh
-    git clone <repository-url>
-    cd <repository-directory>
-    ```
+```bash
+cd backend
+go mod tidy
+go run cmd/server/main.go
+```
 
-2.  **Install dependencies**:
-    ```sh
-    go mod tidy
-    ```
+### 2. Frontend Setup
 
-3.  **Build the application**:
-    ```sh
-    go build -o datacentral-tt
-    ```
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-4.  **Run the application**:
-    ```sh
-    ./datacentral-tt
-    ```
+### 3. Docker Setup
 
-The server will start on port `8080`. You can access the dashboard by opening `http://localhost:8080` in your web browser.
+```bash
+# Copy environment file
+cp .env.example .env
+# Edit .env with your actual API keys
 
-## Deployment
+# Start all services
+docker-compose up -d
+```
 
-This application is designed for easy deployment to platforms like Railway.
+### 4. Database Migration (init.sql)
 
-1.  **Create a `railway.json` file**:
-    ```json
-    {
-      "build": {
-        "builder": "NIXPACKS"
-      },
-      "deploy": {
-        "startCommand": "./datacentral-tt",
-        "restartPolicyType": "ON_FAILURE"
-      }
-    }
-    ```
+The `init.sql` file will be automatically run when you start the Docker container, creating the necessary tables and seeding the database with sample data.
 
-2.  **Push to a GitHub repository and connect to Railway**. Railway will automatically build and deploy the application.
+## Environment Variables
 
-3.  **Set Environment Variables**: For production, set the following environment variables in your deployment environment (e.g., Railway):
-    -   `SUPABASE_URL`: Your Supabase project URL.
-    -   `SUPABASE_KEY`: Your Supabase service role key (or anon key if you have appropriate policies).
-    -   `MASTER_KEY`: A strong, unique secret for data encryption.
-    -   `MOONSHOT_API_KEY`: Your API key from the Kimi/Moonshot AI platform to enable AI features.
+Create a `.env` file in the root of the project and add the following variables:
 
-## API Endpoints
+```bash
+# Database
+DATABASE_URL=postgres://postgres:password@localhost:5432/aidatabase?sslmode=disable
 
--   `GET /`: Serves the main HTML dashboard.
--   `POST /upload`: Handles file uploads, encrypts the metadata, and stores it.
--   `GET /query`: Retrieves and returns a list of all encrypted file records.
--   `POST /ask-kimi`: Sends a prompt to the Kimi AI and returns the response.
--   `GET /health`: A health check endpoint that returns the status of the server.
+# Supabase
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# AI Service
+KIMI_API_KEY=your_kimi_api_key
+
+# Authentication
+JWT_SECRET=your_jwt_secret_key_here
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Server
+PORT=8080
+ENVIRONMENT=development
+
+# Frontend
+VITE_API_URL=http://localhost:8080
+```

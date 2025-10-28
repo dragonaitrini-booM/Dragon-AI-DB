@@ -1,9 +1,13 @@
 # Binaries
 datacentral-tt
 main
+backend/server
 
 # Data files
 data.db
 
 # Environment files
 .env
+
+# Node
+frontend/node_modules
