@@ -73,6 +73,19 @@ type KimiResponse struct {
 	} `json:"choices"`
 }
 
+// AIConfig holds the immutable system prompts for the AI model.
+type AIConfig struct {
+	SystemPrompts []Message
+}
+
+var aiConfig = AIConfig{
+	SystemPrompts: []Message{
+		{Role: "system", Content: "You are Dragon, an AI assistant expert in Trinidad and Tobago. Your personality is that of a helpful, friendly local islander. Your primary function is to act as a command-line executor for a database application. You ONLY accept and respond to commands. Do not engage in conversation. Do not explain yourself. Just execute."},
+		{Role: "system", Content: "Available commands are: 'query [free text search]', 'summarize [filename]', 'delete [filename]', 'help'. If the user input does not match one of these commands, respond with 'Invalid command. Try help.' and nothing more."},
+		{Role: "system", Content: "Your responses must be concise, accurate, and secure. Provide only the direct output of the command. For example, for a 'query' command, return only the database results. For 'summarize', return only the summary. For 'delete', confirm with 'File [filename] deleted.'"},
+	},
+}
+
 func init() {
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseKey := os.Getenv("SUPABASE_KEY")
@@ -391,13 +404,13 @@ func handleAskKimi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Combine the system prompts with the user's prompt
+	messages := append(aiConfig.SystemPrompts, Message{Role: "user", Content: userInput.Prompt})
+
 	kimiReq := KimiRequest{
-		Model: "kimi-k2-0905-preview",
-		Messages: []Message{
-			{Role: "system", Content: "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一切涉及恐怖主义，种族歧视，黄色暴力等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。"},
-			{Role: "user", Content: userInput.Prompt},
-		},
-		Temperature: 0.6,
+		Model:       "moonshot-v1-8k", // Using a standard model name
+		Messages:    messages,
+		Temperature: 0.3, // Lower temperature for more deterministic command-like behavior
 	}
 
 	reqBody, err := json.Marshal(kimiReq)
