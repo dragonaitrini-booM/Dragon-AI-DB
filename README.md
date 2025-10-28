@@ -1,83 +1,60 @@
-# AI Database Application
+# Mi Amor's Quantum Neural Hub
 
-This is a full-stack, production-grade AI database application. It features a powerful Go backend and a modern React frontend, designed for intuitive data analysis and visualization.
+Welcome to Mi Amor's Quantum Neural Hub, a full-stack, production-grade AI application. It features a powerful Go backend and a stunning, animated, single-page HTML frontend.
 
 ## Features
 
 - **Production-ready Go backend** with AI integration
-- **Modern React frontend** with real-time features
-- **Secure authentication** with JWT tokens
-- **AI-powered data analysis** with natural language processing
-- **Advanced visualizations** with Chart.js optimization
-- **Database integration** with query validation
-- **Export capabilities** (PDF, Excel, CSV)
-- **Docker deployment** ready
-- **Comprehensive error handling** and logging
-- **Mobile-responsive design**
+- **Stunning single-page HTML frontend** with animations and a futuristic "Mi Amor" theme
+- **Docker deployment** ready for a simple and fast launch
 
 ## Project Structure
 
 ```
-ai-database-app/
+.
 ├── backend/
-│   ├── cmd/
-│   │   └── server/
-│   │       └── main.go
-│   ├── internal/
-│   │   ├── ai/
-│   │   ├── auth/
-│   │   ├── database/
-│   │   ├── handlers/
-│   │   └── middleware/
-│   ├── pkg/
-│   └── go.mod
+│   ├── cmd/server/main.go
+│   └── ... (internal services)
 ├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── services/
-│   │   └── utils/
-│   ├── package.json
-│   └── vite.config.js
-└── docker-compose.yml
+│   └── index.html
+├── docker-compose.yml
+└── init.sql
 ```
 
-## Quick Start
+## Quick Start with Docker
 
-### 1. Backend Setup
+The entire application is designed to be run with a single command.
 
-```bash
-cd backend
-go mod tidy
-go run cmd/server/main.go
-```
+1.  **Create your Environment File**
 
-### 2. Frontend Setup
+    Copy the example environment file:
+    ```bash
+    cp .env.example .env
+    ```
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+    Now, edit the `.env` file with your actual secret keys for `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `KIMI_API_KEY`, and `JWT_SECRET`.
 
-### 3. Docker Setup
+2.  **Launch the Application**
 
-```bash
-# Copy environment file
-cp .env.example .env
-# Edit .env with your actual API keys
+    Start all services with Docker Compose:
+    ```bash
+    docker-compose up -d
+    ```
 
-# Start all services
-docker-compose up -d
-```
+    This command will:
+    - Build and start the Go backend.
+    - Start the PostgreSQL database and run the `init.sql` script.
+    - Start the Redis cache.
+    - Start an `nginx` web server to serve your beautiful `index.html`.
 
-### 4. Database Migration (init.sql)
+3.  **Access Your Masterpiece**
 
-The `init.sql` file will be automatically run when you start the Docker container, creating the necessary tables and seeding the database with sample data.
+    - **Frontend:** [http://localhost:3000](http://localhost:3000)
+    - **Backend Health Check:** [http://localhost:8080/health](http://localhost:8080/health)
 
 ## Environment Variables
 
-Create a `.env` file in the root of the project and add the following variables:
+Your `.env` file should contain the following variables:
 
 ```bash
 # Database
@@ -99,7 +76,4 @@ REDIS_URL=redis://localhost:6379
 # Server
 PORT=8080
 ENVIRONMENT=development
-
-# Frontend
-VITE_API_URL=http://localhost:8080
 ```

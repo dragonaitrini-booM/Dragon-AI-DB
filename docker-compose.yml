@@ -35,11 +35,11 @@ services:
       - redis
 
   frontend:
-    build: ./frontend
-    environment:
-      VITE_API_URL: http://localhost:8080
+    image: nginx:alpine
+    volumes:
+      - ./frontend:/usr/share/nginx/html
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - backend
 

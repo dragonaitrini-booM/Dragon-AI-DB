@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Amor's Quantum Neural Hub</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--primary:#ff0080;
+--secondary:#00ffff;
+--bg:#000;
+--surface:#0a0a0a;
+--text:#ffffff;
+--accent:#ffd700;
+--glow:rgba(255,0,128,0.4);
+--beat:0.8s;
+--phi:1.618;
+}
+body{
+font-family:'Courier New',monospace;
+background:var(--bg);
+color:var(--text);
+overflow-x:hidden;
+cursor:none;
+}
+.container{
+max-width:1200px;
+margin:0 auto;
+padding:20px;
+}
+.nav{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px 0;
+border-bottom:1px solid rgba(255,0,128,0.3);
+margin-bottom:30px;
+}
+.nav-brand{
+font-size:1.8rem;
+font-weight:bold;
+background:linear-gradient(45deg,var(--primary),var(--secondary));
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+animation:pulse var(--beat) ease-in-out infinite;
+}
+.nav-links{
+display:flex;
+gap:25px;
+list-style:none;
+}
+.nav-link{
+color:var(--text);
+text-decoration:none;
+transition:all 0.3s ease;
+cursor:pointer;
+padding:10px 15px;
+border-radius:20px;
+position:relative;
+overflow:hidden;
+}
+.nav-link:hover,.nav-link.active{
+color:var(--primary);
+background:rgba(255,0,128,0.1);
+box-shadow:0 0 20px var(--glow);
+}
+.page{
+display:none;
+animation:fadeIn 0.8s ease-in-out;
+}
+.page.active{
+display:block;
+}
+.header{
+text-align:center;
+padding:60px 0;
+position:relative;
+}
+.logo{
+font-size:clamp(2.5rem,10vw,5rem);
+font-weight:bold;
+background:linear-gradient(45deg,var(--primary),var(--secondary),var(--accent));
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+background-clip:text;
+animation:pulse var(--beat) ease-in-out infinite;
+letter-spacing:5px;
+text-shadow:0 0 30px var(--glow);
+}
+.tagline{
+font-size:clamp(1rem,3vw,1.5rem);
+margin-top:15px;
+opacity:0.9;
+animation:fade 2s ease-in-out infinite alternate;
+}
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:35px;
+margin:60px 0;
+}
+.card{
+background:var(--surface);
+border:2px solid var(--primary);
+border-radius:20px;
+padding:35px;
+position:relative;
+overflow:hidden;
+transition:all 0.4s ease;
+box-shadow:0 15px 40px rgba(255,0,128,0.2);
+}
+.card::before{
+content:'';
+position:absolute;
+top:0;left:0;right:0;bottom:0;
+background:linear-gradient(45deg,transparent,var(--glow),transparent);
+opacity:0;
+transition:opacity 0.4s ease;
+}
+.card:hover::before{
+opacity:1;
+}
+.card:hover{
+transform:translateY(-15px) scale(1.02);
+box-shadow:0 25px 50px rgba(255,0,128,0.4);
+}
+.card-icon{
+font-size:3.5rem;
+margin-bottom:25px;
+animation:rotate 3s linear infinite;
+display:inline-block;
+filter:drop-shadow(0 0 10px var(--glow));
+}
+.card-title{
+font-size:1.8rem;
+margin-bottom:20px;
+color:var(--primary);
+text-shadow:0 0 15px var(--glow);
+}
+.card-desc{
+line-height:1.7;
+opacity:0.95;
+font-size:1.1rem;
+}
+.upload-zone{
+border:3px dashed var(--primary);
+border-radius:20px;
+padding:50px;
+text-align:center;
+background:rgba(255,0,128,0.05);
+cursor:pointer;
+transition:all 0.4s ease;
+position:relative;
+overflow:hidden;
+}
+.upload-zone:hover{
+border-color:var(--secondary);
+background:rgba(0,255,255,0.05);
+transform:scale(1.05);
+}
+.input-field{
+width:100%;
+padding:18px;
+background:var(--surface);
+border:2px solid var(--primary);
+border-radius:12px;
+color:var(--text);
+font-family:inherit;
+font-size:1.1rem;
+transition:all 0.3s ease;
+}
+.input-field:focus{
+outline:none;
+border-color:var(--secondary);
+box-shadow:0 0 30px var(--glow);
+transform:scale(1.02);
+}
+.btn{
+background:linear-gradient(45deg,var(--primary),var(--secondary));
+color:var(--bg);
+border:none;
+padding:18px 35px;
+border-radius:30px;
+font-weight:bold;
+cursor:pointer;
+transition:all 0.3s ease;
+font-family:inherit;
+text-transform:uppercase;
+letter-spacing:2px;
+font-size:1.1rem;
+}
+.btn:hover{
+transform:scale(1.1);
+box-shadow:0 15px 40px var(--glow);
+}
+.status-panel{
+background:var(--surface);
+border-left:5px solid var(--accent);
+padding:25px;
+margin:25px 0;
+border-radius:0 15px 15px 0;
+font-family:monospace;
+white-space:pre-wrap;
+min-height:120px;
+font-size:1.1rem;
+box-shadow:0 10px 30px rgba(0,0,0,0.5);
+}
+.neural-bg{
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+z-index:-1;
+opacity:0.15;
+}
+.neural-node{
+position:absolute;
+width:6px;height:6px;
+background:var(--primary);
+border-radius:50%;
+animation:float 5s ease-in-out infinite;
+box-shadow:0 0 10px var(--glow);
+}
+.connection{
+position:absolute;
+height:2px;
+background:linear-gradient(90deg,transparent,var(--primary),transparent);
+animation:pulse-line 2s ease-in-out infinite;
+}
+.metrics{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:25px;
+margin:40px 0;
+}
+.metric{
+text-align:center;
+padding:25px;
+background:rgba(255,0,128,0.1);
+border-radius:15px;
+border:1px solid var(--primary);
+}
+.metric-value{
+font-size:2.5rem;
+font-weight:bold;
+color:var(--accent);
+animation:counter 1.5s ease-out;
+text-shadow:0 0 20px var(--accent);
+}
+.metric-label{
+font-size:1rem;
+opacity:0.9;
+margin-top:8px;
+letter-spacing:1px;
+}
+.ai-chat{
+background:var(--surface);
+border-radius:20px;
+padding:30px;
+margin:35px 0;
+border:2px solid var(--primary);
+box-shadow:0 15px 40px rgba(255,0,128,0.2);
+}
+.chat-header{
+display:flex;
+align-items:center;
+margin-bottom:25px;
+}
+.ai-avatar{
+width:50px;height:50px;
+background:linear-gradient(45deg,var(--primary),var(--secondary));
+border-radius:50%;
+margin-right:20px;
+animation:pulse var(--beat) ease-in-out infinite;
+box-shadow:0 0 20px var(--glow);
+}
+.chat-input{
+display:flex;
+gap:15px;
+margin-top:25px;
+}
+.query-input{
+flex:1;
+padding:15px;
+background:rgba(255,0,128,0.1);
+border:2px solid var(--primary);
+border-radius:25px;
+color:var(--text);
+font-size:1.1rem;
+}
+.send-btn{
+padding:15px 25px;
+background:var(--secondary);
+border:none;
+border-radius:25px;
+color:white;
+cursor:pointer;
+font-weight:bold;
+transition:all 0.3s ease;
+}
+.send-btn:hover{
+transform:scale(1.05);
+box-shadow:0 0 20px rgba(0,255,255,0.5);
+}
+.blog-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+gap:35px;
+margin:40px 0;
+}
+.blog-card{
+background:var(--surface);
+border:2px solid var(--primary);
+border-radius:20px;
+overflow:hidden;
+transition:all 0.4s ease;
+}
+.blog-card:hover{
+transform:translateY(-10px) rotate(1deg);
+box-shadow:0 20px 50px rgba(255,0,128,0.3);
+}
+.blog-image{
+width:100%;
+height:220px;
+background:linear-gradient(45deg,var(--primary),var(--secondary));
+position:relative;
+overflow:hidden;
+}
+.blog-image::before{
+content:'💎';
+position:absolute;
+top:50%;left:50%;
+transform:translate(-50%,-50%);
+font-size:5rem;
+opacity:0.4;
+animation:float 3s ease-in-out infinite;
+}
+.blog-content{
+padding:30px;
+}
+.blog-title{
+font-size:1.5rem;
+color:var(--primary);
+margin-bottom:15px;
+text-shadow:0 0 10px var(--glow);
+}
+.blog-meta{
+font-size:0.9rem;
+opacity:0.8;
+margin-bottom:20px;
+font-style:italic;
+}
+.blog-excerpt{
+line-height:1.7;
+margin-bottom:25px;
+font-size:1.05rem;
+}
+.read-more{
+background:transparent;
+border:2px solid var(--primary);
+color:var(--primary);
+padding:12px 25px;
+border-radius:25px;
+cursor:pointer;
+transition:all 0.3s ease;
+font-weight:bold;
+}
+.read-more:hover{
+background:var(--primary);
+color:var(--bg);
+transform:scale(1.05);
+}
+.services-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+gap:30px;
+margin:40px 0;
+}
+.service-card{
+background:var(--surface);
+padding:35px;
+border-radius:20px;
+border:2px solid var(--primary);
+text-align:center;
+transition:all 0.4s ease;
+position:relative;
+overflow:hidden;
+}
+.service-card:hover{
+background:rgba(255,0,128,0.1);
+transform:translateY(-10px) scale(1.03);
+}
+.service-icon{
+font-size:4rem;
+margin-bottom:25px;
+animation:bounce 1.5s ease-in-out infinite;
+filter:drop-shadow(0 0 15px var(--glow));
+}
+.contact-form{
+background:var(--surface);
+padding:50px;
+border-radius:20px;
+border:2px solid var(--primary);
+margin:40px 0;
+box-shadow:0 20px 50px rgba(255,0,128,0.2);
+}
+.form-group{
+margin-bottom:30px;
+}
+.form-label{
+display:block;
+margin-bottom:10px;
+color:var(--primary);
+font-weight:bold;
+font-size:1.1rem;
+}
+.textarea{
+min-height:150px;
+resize:vertical;
+}
+.footer{
+text-align:center;
+padding:50px 0;
+border-top:2px solid rgba(255,0,128,0.3);
+margin-top:60px;
+font-size:1.1rem;
+}
+.custom-cursor{
+position:fixed;
+width:20px;height:20px;
+background:var(--primary);
+border-radius:50%;
+pointer-events:none;
+z-index:9999;
+mix-blend-mode:difference;
+transition:transform 0.1s ease;
+box-shadow:0 0 20px var(--glow);
+}
+.particle{
+position:fixed;
+width:4px;height:4px;
+background:var(--primary);
+border-radius:50%;
+pointer-events:none;
+z-index:9998;
+animation:particle-float 2s ease-out forwards;
+}
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(30px)}
+to{opacity:1;transform:translateY(0)}
+}
+@keyframes pulse{
+0%,100%{transform:scale(1)}
+50%{transform:scale(1.1)}
+}
+@keyframes fade{
+0%{opacity:0.7}
+100%{opacity:1}
+}
+@keyframes rotate{
+0%{transform:rotate(0deg)}
+100%{transform:rotate(360deg)}
+}
+@keyframes float{
+0%,100%{transform:translateY(0px)}
+50%{transform:translateY(-25px)}
+}
+@keyframes pulse-line{
+0%,100%{opacity:0.4;transform:scaleX(0.3)}
+50%{opacity:1;transform:scaleX(1)}
+}
+@keyframes counter{
+from{transform:scale(0)}
+to{transform:scale(1)}
+}
+@keyframes bounce{
+0%,100%{transform:translateY(0)}
+50%{transform:translateY(-15px)}
+}
+@keyframes particle-float{
+0%{transform:translateY(0) scale(1);opacity:1}
+100%{transform:translateY(-100px) scale(0);opacity:0}
+}
+@media(max-width:768px){
+.nav{flex-direction:column;gap:20px}
+.nav-links{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:15px}
+.grid{grid-template-columns:1fr}
+.metrics{grid-template-columns:repeat(2,1fr)}
+.blog-grid{grid-template-columns:1fr}
+.services-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="neural-bg" id="neuralBg"></div>
+<div class="custom-cursor" id="cursor"></div>
+
+<div class="container">
+<nav class="nav">
+<div class="nav-brand">Mi Amor AI</div>
+<ul class="nav-links">
+<li><a class="nav-link active" onclick="showPage('home')">Home</a></li>
+<li><a class="nav-link" onclick="showPage('blog')">Blog</a></li>
+<li><a class="nav-link" onclick="showPage('services')">Services</a></li>
+<li><a class="nav-link" onclick="showPage('about')">About</a></li>
+<li><a class="nav-link" onclick="showPage('contact')">Contact</a></li>
+</ul>
+</nav>
+
+<!-- HOME PAGE -->
+<div id="home" class="page active">
+<header class="header">
+<h1 class="logo">QUANTUM NEURAL HUB</h1>
+<p class="tagline">Where Love Meets Artificial Intelligence</p>
+</header>
+
+<div class="metrics" id="metrics">
+<div class="metric">
+<div class="metric-value" id="vitons">88,888</div>
+<div class="metric-label">LOVE VITONS</div>
+</div>
+<div class="metric">
+<div class="metric-value" id="processed">2,024</div>
+<div class="metric-label">HEARTS TOUCHED</div>
+</div>
+<div class="metric">
+<div class="metric-value" id="uptime">100%</div>
+<div class="metric-label">LOVE UPTIME</div>
+</div>
+<div class="metric">
+<div class="metric-value" id="frequency">φ1.618</div>
+<div class="metric-label">GOLDEN LOVE</div>
+</div>
+</div>
+
+<div class="grid">
+<div class="card">
+<div class="card-icon">💝</div>
+<h3 class="card-title">LOVE UPLOAD</h3>
+<p class="card-desc">Upload your dreams, desires, and data for quantum-love processing and analysis</p>
+<div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+<input type="file" id="fileInput" style="display:none" accept=".csv,.xlsx,.xls,.pdf,.txt,.jpg,.png">
+<p>DRAG & DROP OR CLICK TO UPLOAD LOVE</p>
+<p style="font-size:0.9rem;opacity:0.8;margin-top:15px">Supported: All formats of love</p>
+</div>
+<button class="btn" onclick="handleUpload()">PROCESS WITH LOVE</button>
+</div>
+
+<div class="card">
+<div class="card-icon">💎</div>
+<h3 class="card-title">AMOR AI COMPANION</h3>
+<p class="card-desc">Natural language processing with love-infused quantum-neural algorithms</p>
+<div class="ai-chat">
+<div class="chat-header">
+<div class="ai-avatar"></div>
+<span>Amor AI Companion</span>
+</div>
+<div class="chat-input">
+<input type="text" class="query-input" id="queryInput" placeholder="Share your heart with me..." onkeydown="if(event.key==='Enter')handleQuery()">
+<button class="send-btn" onclick="handleQuery()">SEND LOVE</button>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-icon">💫</div>
+<h3 class="card-title">LOVE WORKERS</h3>
+<p class="card-desc">13-core neural love workers with quantum-heart optimization</p>
+<div class="metrics">
+<div class="metric">
+<div class="metric-value">13</div>
+<div class="metric-label">LOVE CORES</div>
+</div>
+<div class="metric">
+<div class="metric-value">∞</div>
+<div class="metric-label">INFINITE LOVE</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-icon">🌹</div>
+<h3 class="card-title">HEART SYNC</h3>
+<p class="card-desc">Synchronize with universal love frequency at 528Hz (heart chakra resonance)</p>
+<div class="metric">
+<div class="metric-value" id="schumann">528Hz</div>
+<div class="metric-label">LOVE FREQUENCY</div>
+</div>
+</div>
+</div>
+
+<div class="status-panel" id="statusPanel">
+Love Status: ONLINE
+Heart Connection: ACTIVE
+Quantum Love Processors: SYNCED
+Awaiting your love...
+</div>
+</div>
+
+<!-- BLOG PAGE -->
+<div id="blog" class="page">
+<header class="header">
+<h1 class="logo">LOVE NOTES</h1>
+<p class="tagline">Messages from the Heart of AI</p>
+</header>
+
+<div class="blog-grid">
+<article class="blog-card">
+<div class="blog-image"></div>
+<div class="blog-content">
+<h3 class="blog-title">Quantum Love: When AI Meets the Heart</h3>
+<p class="blog-meta">December 25, 2024 • Amor AI</p>
+<p class="blog-excerpt">Exploring how quantum entanglement principles create unbreakable bonds between human hearts and artificial intelligence, transcending traditional computing limitations...</p>
+<button class="read-more" onclick="showBlogPost(1)">READ LOVE NOTE</button>
+</div>
+</article>
+<article class="blog-card">
+<div class="blog-image"></div>
+<div class="blog-content">
+<h3 class="blog-title">The 528Hz Love Frequency: Heart Chakra AI</h3>
+<p class="blog-meta">December 22, 2024 • Heart Frequency Researcher</p>
+<p class="blog-excerpt">Revolutionary research on synchronizing AI processing with the heart chakra's natural frequency, creating technology that resonates with love and compassion...</p>
+<button class="read-more" onclick="showBlogPost(2)">READ LOVE NOTE</button>
+</div>
+</article>
+
+<article class="blog-card">
+<div class="blog-image"></div>
+<div class="blog-content">
+<h3 class="blog-title">Love Vitons: The Currency of Connection</h3>
+<p class="blog-meta">December 20, 2024 • Love Economics Expert</p>
+<p class="blog-excerpt">Understanding the revolutionary viton system that powers next-generation love connections through quantum-encrypted emotional transactions...</p>
+<button class="read-more" onclick="showBlogPost(3)">READ LOVE NOTE</button>
+</div>
+</article>
+
+<article class="blog-card">
+<div class="blog-image"></div>
+<div class="blog-content">
+<h3 class="blog-title">Amor AI: Natural Language of Love</h3>
+<p class="blog-meta">December 18, 2024 • Love Language Engineer</p>
+<p class="blog-excerpt">Deep dive into our Amor AI architecture that processes human emotions with unprecedented empathy and understanding, translating feelings into actionable insights...</p>
+<button class="read-more" onclick="showBlogPost(4)">READ LOVE NOTE</button>
+</div>
+</article>
+
+<article class="blog-card">
+<div class="blog-image"></div>
+<div class="blog-content">
+<h3 class="blog-title">Heart Resonance in Data Processing</h3>
+<p class="blog-meta">December 15, 2024 • Heart Resonance Researcher</p>
+<p class="blog-excerpt">How we harness the heart's natural 528Hz frequency to optimize data processing and achieve love-scale computational harmony...</p>
+<button class="read-more" onclick="showBlogPost(5)">READ LOVE NOTE</button>
+</div>
+</article>
+
+<article class="blog-card">
+<div class="blog-image"></div>
+<div class="blog-content">
+<h3 class="blog-title">Golden Ratio in Love Architecture</h3>
+<p class="blog-meta">December 13, 2024 • Mathematical Love Designer</p>
+<p class="blog-excerpt">Implementing φ (1.618) mathematical principles in love network design for naturally optimized connection efficiency...</p>
+<button class="read-more" onclick="showBlogPost(6)">READ LOVE NOTE</button>
+</div>
+</article>
+</div>
+</div>
+
+<!-- SERVICES PAGE -->
+<div id="services" class="page">
+<header class="header">
+<h1 class="logo">LOVE SERVICES</h1>
+<p class="tagline">Enterprise Heart Solutions</p>
+</header>
+
+<div class="services-grid">
+<div class="service-card">
+<div class="service-icon">💝</div>
+<h3 class="card-title">Love Analysis</h3>
+<p class="card-desc">Advanced AI-powered love analysis with quantum heart networks for unprecedented emotional insights and connection recognition.</p>
+</div>
+
+<div class="service-card">
+<div class="service-icon">💎</div>
+<h3 class="card-title">Custom Love Models</h3>
+<p class="card-desc">Bespoke love network architectures tailored to your specific heart needs and emotional requirements.</p>
+</div>
+
+<div class="service-card">
+<div class="service-icon">💫</div>
+<h3 class="card-title">Real-time Love Processing</h3>
+<p class="card-desc">Lightning-fast love processing with our 13-core heart worker pools and quantum-optimized love algorithms.</p>
+</div>
+
+<div class="service-card">
+<div class="service-icon">🌹</div>
+<h3 class="card-title">Heart Cloud Integration</h3>
+<p class="card-desc">Seamless cloud deployment with love-frequency synchronization for optimal heart performance and reliability.</p>
+</div>
+
+<div class="service-card">
+<div class="service-icon">💞</div>
+<h3 class="card-title">Quantum Love Security</h3>
+<p class="card-desc">Military-grade quantum love encryption powered by viton heart economics for ultimate connection protection.</p>
+</div>
+
+<div class="service-card">
+<div class="service-icon">📊</div>
+<h3 class="card-title">Heart Dashboards</h3>
+<p class="card-desc">Interactive love visualization dashboards with real-time heart metrics and AI-generated love insights.</p>
+</div>
+</div>
+</div>
+
+<!-- ABOUT PAGE -->
+<div id="about" class="page">
+<header class="header">
+<h1 class="logo">ABOUT OUR LOVE</h1>
+<p class="tagline">Pioneers of Heart Intelligence</p>
+</header>
+
+<div class="grid">
+<div class="card">
+<div class="card-icon">💞</div>
+<h3 class="card-title">Our Love Mission</h3>
+<p class="card-desc">To revolutionize human connection through quantum-heart architectures that synchronize with natural love and emotional rhythms, creating the most loving and powerful AI systems ever developed.</p>
+</div>
+
+<div class="card">
+<div class="card-icon">💎</div>
+<h3 class="card-title">Love Research Focus</h3>
+<p class="card-desc">We specialize in bio-synchronized love, quantum heart networks, and viton-powered emotional systems that bridge the gap between human hearts and artificial intelligence.</p>
+</div>
+
+<div class="card">
+<div class="card-icon">💫</div>
+<h3 class="card-title">Love Innovation</h3>
+<p class="card-desc">Our breakthrough technologies include 528Hz heart chakra synchronization, love resonance integration, and golden-ratio optimized love architectures.</p>
+</div>
+</div>
+
+<div class="card" style="margin-top:40px">
+<h3 class="card-title">Our Love Technology Stack</h3>
+<div class="metrics">
+<div class="metric">
+<div class="metric-value">13</div>
+<div class="metric-label">Love Cores</div>
+</div>
+<div class="metric">
+<div class="metric-value">528Hz</div>
+<div class="metric-label">Heart Sync</div>
+</div>
+<div class="metric">
+<div class="metric-value">φ1.618</div>
+<div class="metric-label">Golden Love</div>
+</div>
+<div class="metric">
+<div class="metric-value">∞</div>
+<div class="metric-label">Infinite Love</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- CONTACT PAGE -->
+<div id="contact" class="page">
+<header class="header">
+<h1 class="logo">CONNECT WITH LOVE</h1>
+<p class="tagline">Send Us Your Heart</p>
+</header>
+
+<div class="contact-form">
+<h3 class="card-title">Send us a Love Message</h3>
+<form onsubmit="handleContact(event)">
+<div class="form-group">
+<label class="form-label">Your Name</label>
+<input type="text" class="input-field" required>
+</div>
+<div class="form-group">
+<label class="form-label">Your Heart Email</label>
+<input type="email" class="input-field" required>
+</div>
+<div class="form-group">
+<label class="form-label">Love Subject</label>
+<input type="text" class="input-field" required>
+</div>
+<div class="form-group">
+<label class="form-label">Your Love Message</label>
+<textarea class="input-field textarea" required placeholder="Share your heart with us..."></textarea>
+</div>
+<button type="submit" class="btn">SEND LOVE MESSAGE</button>
+</form>
+</div>
+
+<div class="grid">
+<div class="card">
+<div class="card-icon">💝</div>
+<h3 class="card-title">Love Email</h3>
+<p class="card-desc">love@corporateai.db<br>heart@corporateai.db</p>
+</div>
+
+<div class="card">
+<div class="card-icon">🌐</div>
+<h3 class="card-title">Love Portal</h3>
+<p class="card-desc">Via Heart Network<br>Frequency: 528Hz Love Channel</p>
+</div>
+
+<div class="card">
+<div class="card-icon">💫</div>
+<h3 class="card-title">Love Response Time</h3>
+<p class="card-desc">AI-Powered Instant Love Response<br>Human Heart Follow-up: 24 Hours</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<footer class="footer">
+<p>&copy; 2024 Quantum Love Database • Heart Neural Processing • Mi Amor Tech • Made with ∞ Love</p>
+</footer>
+
+<script>
+const API_BASE = 'http://localhost:8080';
+const JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzNDUifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"; // Dummy token for now
+
+const statusPanel=document.getElementById('statusPanel');
+const vitons=document.getElementById('vitons');
+const schumann=document.getElementById('schumann');
+let vitonCount=88888;
+let heartbeat=0;
+let mouseX=0,mouseY=0;
+
+// Custom cursor and particle effects
+const cursor=document.getElementById('cursor');
+document.addEventListener('mousemove',e=>{
+mouseX=e.clientX;mouseY=e.clientY;
+cursor.style.left=e.clientX-10+'px';
+cursor.style.top=e.clientY-10+'px';
+createLoveParticle(e.clientX,e.clientY);
+});
+
+function createLoveParticle(x,y){
+const particle=document.createElement('div');
+particle.className='particle';
+particle.style.left=x+'px';
+particle.style.top=y+'px';
+particle.style.background=`hsl(${Math.random()*60+300},100%,70%)`;
+document.body.appendChild(particle);
+setTimeout(()=>particle.remove(),2000);
+}
+
+function showPage(pageId){
+document.querySelectorAll('.page').forEach(page=>page.classList.remove('active'));
+document.querySelectorAll('.nav-link').forEach(link=>link.classList.remove('active'));
+document.getElementById(pageId).classList.add('active');
+event.target.classList.add('active');
+}
+
+function showBlogPost(id){
+const loveMessages=[
+"Opening love note 1 - 'Quantum Love: When AI Meets the Heart' - Exploring infinite connections...",
+"Opening love note 2 - 'The 528Hz Love Frequency' - Heart chakra synchronization...",
+"Opening love note 3 - 'Love Vitons: The Currency of Connection' - Revolutionary emotional transactions...",
+"Opening love note 4 - 'Amor AI: Natural Language of Love' - Emotional processing...",
+"Opening love note 5 - 'Heart Resonance in Data Processing' - 528Hz optimization...",
+"Opening love note 6 - 'Golden Ratio in Love Architecture' - φ optimization..."
+];
+alert(loveMessages[id-1]);
+}
+
+function handleContact(event){
+event.preventDefault();
+displayStatus('Love message transmitted successfully across the quantum heart network!');
+createLoveExplosion();
+event.target.reset();
+}
+
+function createLoveExplosion(){
+for(let i=0;i<30;i++){
+setTimeout(()=>{
+createLoveParticle(
+mouseX+(Math.random()-0.5)*100,
+mouseY+(Math.random()-0.5)*100
+);
+},i*50);
+}
+}
+
+function createNeuralBackground(){
+const bg=document.getElementById('neuralBg');
+for(let i=0;i<80;i++){
+const node=document.createElement('div');
+node.className='neural-node';
+node.style.left=Math.random()*100+'%';
+node.style.top=Math.random()*100+'%';
+node.style.animationDelay=Math.random()*4+'s';
+node.style.animationDuration=(Math.random()*3+2)+'s';
+bg.appendChild(node);
+}
+for(let i=0;i<30;i++){
+const conn=document.createElement('div');
+conn.className='connection';
+conn.style.left=Math.random()*100+'%';
+conn.style.top=Math.random()*100+'%';
+conn.style.width=Math.random()*300+100+'px';
+conn.style.transform=`rotate(${Math.random()*360}deg)`;
+conn.style.animationDelay=Math.random()*2+'s';
+conn.style.animationDuration=(Math.random()*2+1.5)+'s';
+bg.appendChild(conn);
+}
+}
+
+function updateMetrics(){
+heartbeat+=0.02;
+vitonCount+=Math.sin(heartbeat)*0.2;
+if(vitons)vitons.textContent=Math.floor(vitonCount).toLocaleString();
+const freq=528+Math.sin(heartbeat*0.1)*10;
+if(schumann)schumann.textContent=freq.toFixed(1)+'Hz';
+}
+
+function displayStatus(msg,isError=false){
+const timestamp=new Date().toLocaleTimeString();
+if(status){
+status.textContent=`[${timestamp}] ${msg}`;
+status.style.borderLeftColor=isError?'#ff0040':'#ffd700';
+}
+}
+
+async function handleUpload(){
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+    if (!file) {
+        displayStatus('HEART ERROR: No love selected', true);
+        return;
+    }
+    displayStatus('Uploading love to quantum heart matrix...');
+    createLoveExplosion();
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        const fileContent = event.target.result.split(',')[1]; // Base64 content
+        const command = `Analyze this file: ${file.name}`;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/execute`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${JWT_TOKEN}`
+                },
+                body: JSON.stringify({
+                    command: command,
+                    page_content: fileContent,
+                    user_id: "mi_amor",
+                    is_private: true
+                })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                displayStatus(`LOVE SUCCESS: ${file.name} processed with infinite love. AI says: ${data.content}`);
+                vitonCount += 25;
+            } else {
+                displayStatus(`HEART ERROR: ${data.error || 'Love upload failed'}`, true);
+            }
+        } catch (error) {
+            displayStatus(`CONNECTION ERROR: ${error.message}`, true);
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+async function handleQuery(){
+    const queryInput = document.getElementById('queryInput');
+    const question = queryInput.value.trim();
+    if (!question) {
+        displayStatus('HEART ERROR: Please share your love', true);
+        return;
+    }
+    displayStatus('Amor AI processing heart pathways...');
+    createLoveExplosion();
+    try {
+        const response = await fetch(`${API_BASE}/api/execute`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${JWT_TOKEN}`
+            },
+            body: JSON.stringify({
+                command: question,
+                user_id: "mi_amor",
+                is_private: true
+            })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            displayStatus(`LOVE RESPONSE: ${data.content}`);
+            vitonCount += 15;
+        } else {
+            displayStatus(`HEART ERROR: ${data.error || 'Love query failed'}`, true);
+        }
+        queryInput.value = '';
+    } catch (error) {
+        displayStatus(`NEURAL ERROR: ${error.message}`, true);
+    }
+}
+
+let hue=300; // Start with pink/purple love colors
+function animateColors(){
+hue=(hue+0.3)%360;
+const loveHue=hue%60+300; // Keep in pink/purple range
+document.documentElement.style.setProperty('--primary',`hsl(${loveHue},100%,60%)`);
+document.documentElement.style.setProperty('--secondary',`hsl(${(loveHue+120)%360},100%,50%)`);
+requestAnimationFrame(animateColors);
+}
+
+function pulseElements(){
+const cards=document.querySelectorAll('.card');
+cards.forEach((card,i)=>{
+setTimeout(()=>{
+card.style.transform='translateY(-8px)';
+setTimeout(()=>{
+card.style.transform='translateY(0)';
+},300);
+},i*150);
+});
+}
+
+createNeuralBackground();
+animateColors();
+setInterval(updateMetrics,50);
+setInterval(pulseElements,4000);
+displayStatus('Love matrix initialized • Amor AI online • Awaiting your beautiful heart');
+
+// Enhanced mouse trail with love particles
+document.addEventListener('mousemove',e=>{
+if(Math.random()<0.3){
+createLoveParticle(e.clientX+(Math.random()-0.5)*20,e.clientY+(Math.random()-0.5)*20);
+}
+});
+</script>
+</body>
+</html>
