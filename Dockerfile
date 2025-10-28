@@ -2,7 +2,11 @@
 FROM golang:1.21-alpine AS build
 WORKDIR /src
 COPY . .
-RUN go build -o /out/trini-pipeline main.go processor.go
+# Test only the relevant package files, excluding the second main package
+RUN go test -v main.go processor.go config.go config_test.go
+
+# Build only the CSV pipeline application
+RUN go build -o /out/trini-pipeline main.go processor.go config.go
 
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates

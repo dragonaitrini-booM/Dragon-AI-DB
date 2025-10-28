@@ -107,9 +107,9 @@ func worker(ctx context.Context, id int, jobs <-chan string) {
 				log.Printf("worker %d stopping (jobs closed)", id)
 				return
 			}
-			log.Printf("worker %d processing %s", id, jobPath)
+			log.Printf("worker %d processing %s", id, Redact(jobPath))
 			if err := processAndReport(jobPath, outputDir); err != nil {
-				log.Printf("worker %d failed to process %s: %v", id, jobPath, err)
+				log.Printf("worker %d failed to process %s: %v", id, Redact(jobPath), err)
 				// move to .failed for inspection
 				failedPath := jobPath + ".failed"
 				os.Rename(jobPath, failedPath)
