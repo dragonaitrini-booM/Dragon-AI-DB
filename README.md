@@ -1,12 +1,13 @@
 # Mi Amor's Quantum Neural Hub
 
-Welcome to Mi Amor's Quantum Neural Hub, a full-stack, production-grade AI application. It features a powerful Go backend and a stunning, animated, single-page HTML frontend.
+Welcome to Mi Amor's Quantum Neural Hub, a full-stack, production-grade AI application. It features a powerful Go backend and a stunning, animated, single-page HTML frontend, all packaged in a single Docker container for easy deployment to Hugging Face.
 
 ## Features
 
 - **Production-ready Go backend** with AI integration
 - **Stunning single-page HTML frontend** with animations and a futuristic "Mi Amor" theme
-- **Docker deployment** ready for a simple and fast launch
+- **Unified Docker image** for easy deployment to Hugging Face
+- **Local development environment** with Docker Compose
 
 ## Project Structure
 
@@ -17,13 +18,32 @@ Welcome to Mi Amor's Quantum Neural Hub, a full-stack, production-grade AI appli
 │   └── ... (internal services)
 ├── frontend/
 │   └── index.html
+├── Dockerfile
 ├── docker-compose.yml
+├── nginx.conf
+├── supervisord.conf
 └── init.sql
 ```
 
-## Quick Start with Docker
+## Deployment to Hugging Face
 
-The entire application is designed to be run with a single command.
+1.  **Create a Hugging Face Space**
+
+    - Choose the "Docker" SDK and the "Blank" template.
+    - Add your `KIMI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `JWT_SECRET`, and `REDIS_URL` to the "Repository secrets".
+
+2.  **Push your code**
+
+    ```bash
+    git remote add huggingface https://huggingface.co/spaces/YOUR_HF_USER/YOUR_SPACE_NAME
+    git push huggingface main
+    ```
+
+    Hugging Face will automatically build and deploy your application.
+
+## Local Development
+
+For local development, you can use the provided `docker-compose.yml` file.
 
 1.  **Create your Environment File**
 
@@ -32,20 +52,14 @@ The entire application is designed to be run with a single command.
     cp .env.example .env
     ```
 
-    Now, edit the `.env` file with your actual secret keys for `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `KIMI_API_KEY`, and `JWT_SECRET`.
+    Now, edit the `.env` file with your actual secret keys.
 
 2.  **Launch the Application**
 
     Start all services with Docker Compose:
     ```bash
-    docker-compose up -d
+    docker compose up -d
     ```
-
-    This command will:
-    - Build and start the Go backend.
-    - Start the PostgreSQL database and run the `init.sql` script.
-    - Start the Redis cache.
-    - Start an `nginx` web server to serve your beautiful `index.html`.
 
 3.  **Access Your Masterpiece**
 
