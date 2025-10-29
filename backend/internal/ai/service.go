@@ -63,7 +63,7 @@ func NewService(apiKey, redisURL string, logger *slog.Logger) *Service {
 
 	return &Service{
 		apiKey:  apiKey,
-		baseURL: "https://api.moonshot.cn/v1/chat/completions",
+		baseURL: "https://router.huggingface.co/together/v1",
 		httpClient: &http.Client{
 			Timeout: 45 * time.Second,
 		},
@@ -160,7 +160,7 @@ func (s *Service) ExecuteCommand(ctx context.Context, req ExecuteRequest) (*Exec
 
 	// Call AI API
 	kimiReq := KimiRequest{
-		Model:       "moonshot-v1-8k",
+		Model:       "moonshotai/Kimi-K2-Instruct-0905",
 		Messages:    messages,
 		Temperature: 0.3,
 		MaxTokens:   4000,

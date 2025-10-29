@@ -489,9 +489,40 @@ to{transform:scale(1)}
 .blog-grid{grid-template-columns:1fr}
 .services-grid{grid-template-columns:1fr}
 }
+.login-modal{
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:rgba(0,0,0,0.8);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:10000;
+}
+.login-card{
+background:var(--surface);
+padding:40px;
+border-radius:20px;
+border:2px solid var(--primary);
+box-shadow:0 0 50px var(--glow);
+text-align:center;
+}
 </style>
 </head>
 <body>
+<div id="loginModal" class="login-modal">
+    <div class="login-card">
+        <h2 class="card-title">Welcome, Mi Amor</h2>
+        <p class="card-desc" style="margin-bottom: 20px;">Please log in to access the Quantum Neural Hub.</p>
+        <form id="loginForm">
+            <input type="email" id="email" class="input-field" placeholder="email@love.com" required value="test@example.com">
+            <br><br>
+            <input type="password" id="password" class="input-field" placeholder="password" required value="password">
+            <br><br>
+            <button type="submit" class="btn">Enter the Hub of Love</button>
+        </form>
+    </div>
+</div>
 <div class="neural-bg" id="neuralBg"></div>
 <div class="custom-cursor" id="cursor"></div>
 
@@ -821,7 +852,7 @@ Awaiting your love...
 
 <script>
 const API_BASE = 'http://localhost:8080';
-const JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzNDUifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"; // Dummy token for now
+let JWT_TOKEN = ""; // Will be set after login
 
 const statusPanel=document.getElementById('statusPanel');
 const vitons=document.getElementById('vitons');
@@ -1036,6 +1067,31 @@ document.addEventListener('mousemove',e=>{
 if(Math.random()<0.3){
 createLoveParticle(e.clientX+(Math.random()-0.5)*20,e.clientY+(Math.random()-0.5)*20);
 }
+});
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    displayStatus('Authenticating with the heart of the universe...');
+
+    try {
+        const response = await fetch(`${API_BASE}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            JWT_TOKEN = data.token;
+            displayStatus('LOVE SUCCESS: You are now one with the Quantum Neural Hub.');
+            document.getElementById('loginModal').style.display = 'none';
+        } else {
+            displayStatus(`HEART ERROR: ${data.error || 'Login failed'}`, true);
+        }
+    } catch (error) {
+        displayStatus(`CONNECTION ERROR: ${error.message}`, true);
+    }
 });
 </script>
 </body>

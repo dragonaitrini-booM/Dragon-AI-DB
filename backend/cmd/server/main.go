@@ -23,7 +23,7 @@ type Config struct {
 	DatabaseURL string
 	SupabaseURL string
 	SupabaseKey string
-	KimiAPIKey  string
+	HfAPIKey    string
 	JWTSecret   string
 	RedisURL    string
 	Environment string
@@ -47,7 +47,7 @@ func main() {
 	defer db.Close()
 
 	// Initialize AI service
-	aiService := ai.NewService(config.KimiAPIKey, config.RedisURL, logger)
+	aiService := ai.NewService(config.HfAPIKey, config.RedisURL, logger)
 
 	// Initialize auth service
 	authService := auth.NewService(config.JWTSecret, db.DB, logger)
@@ -148,7 +148,7 @@ func loadConfig() *Config {
 		DatabaseURL: getEnvOrPanic("DATABASE_URL"),
 		SupabaseURL: getEnvOrPanic("SUPABASE_URL"),
 		SupabaseKey: getEnvOrPanic("SUPABASE_ANON_KEY"),
-		KimiAPIKey:  getEnvOrPanic("KIMI_API_KEY"),
+		HfAPIKey:    getEnvOrPanic("HF_API_KEY"),
 		JWTSecret:   getEnvOrPanic("JWT_SECRET"),
 		RedisURL:    getEnvOrDefault("REDIS_URL", "redis://localhost:6379"),
 		Environment: getEnvOrDefault("ENVIRONMENT", "development"),
