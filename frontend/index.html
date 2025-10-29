@@ -302,6 +302,20 @@ transition:all 0.3s ease;
 transform:scale(1.05);
 box-shadow:0 0 20px rgba(0,255,255,0.5);
 }
+.btn-prompt {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0 5px;
+}
+.btn-prompt:hover {
+    background: var(--primary);
+    color: var(--bg);
+}
 .blog-grid{
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
@@ -535,6 +549,7 @@ text-align:center;
 <li><a class="nav-link" onclick="showPage('services')">Services</a></li>
 <li><a class="nav-link" onclick="showPage('about')">About</a></li>
 <li><a class="nav-link" onclick="showPage('contact')">Contact</a></li>
+<li><a class="nav-link" onclick="showPage('faq')">FAQ</a></li>
 </ul>
 </nav>
 
@@ -589,6 +604,12 @@ text-align:center;
 <div class="chat-input">
 <input type="text" class="query-input" id="queryInput" placeholder="Share your heart with me..." onkeydown="if(event.key==='Enter')handleQuery()">
 <button class="send-btn" onclick="handleQuery()">SEND LOVE</button>
+</div>
+<div class="example-prompts" style="margin-top: 20px; text-align: center;">
+<p style="margin-bottom: 10px; font-size: 0.9rem; color: var(--accent);">Need inspiration? Try these:</p>
+<button class="btn-prompt" onclick="setQuery('Summarize the latest sales data')">Summarize Sales</button>
+<button class="btn-prompt" onclick="setQuery('Show me a chart of revenue by product')">Chart Revenue</button>
+<button class="btn-prompt" onclick="setQuery('What are the top 3 selling products?')">Top Products</button>
 </div>
 </div>
 </div>
@@ -846,6 +867,29 @@ Awaiting your love...
 
 </div>
 
+<!-- FAQ PAGE -->
+<div id="faq" class="page">
+    <header class="header">
+        <h1 class="logo">LOVE QUESTIONS</h1>
+        <p class="tagline">Frequently Asked Questions about the Hub of Love</p>
+    </header>
+
+    <div class="card">
+        <h3 class="card-title">What are Love Vitons?</h3>
+        <p class="card-desc">Love Vitons are the universal currency of emotional connection and data analysis within the Quantum Neural Hub. You earn them by interacting with the Amor AI, uploading data, and creating insights. They represent the value of your love and connection.</p>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title">How does the Amor AI work?</h3>
+        <p class="card-desc">The Amor AI is a sophisticated, quantum-powered neural network that understands natural language. It translates your questions into complex data analysis queries, visualizes the results, and provides you with actionable insights, all powered by the frequency of love (528Hz).</p>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title">Is my data safe?</h3>
+        <p class="card-desc">Your love and data are protected with military-grade quantum encryption. All connections are secured with the Heart Sync protocol, ensuring that your data remains private and confidential. We believe that love is the ultimate security.</p>
+    </div>
+</div>
+
 <footer class="footer">
 <p>&copy; 2024 Quantum Love Database • Heart Neural Processing • Mi Amor Tech • Made with ∞ Love</p>
 </footer>
@@ -885,6 +929,10 @@ document.querySelectorAll('.page').forEach(page=>page.classList.remove('active')
 document.querySelectorAll('.nav-link').forEach(link=>link.classList.remove('active'));
 document.getElementById(pageId).classList.add('active');
 event.target.classList.add('active');
+}
+
+function setQuery(query) {
+    document.getElementById('queryInput').value = query;
 }
 
 function showBlogPost(id){

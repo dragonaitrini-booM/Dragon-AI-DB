@@ -1,0 +1,3 @@
+{"time":"2025-10-29T18:38:59.469698058Z","level":"INFO","msg":"Starting server","port":"8080"}
+{"time":"2025-10-29T18:38:59.473298465Z","level":"ERROR","msg":"Server failed","error":"listen tcp :8080: bind: address already in use"}
+exit status 1

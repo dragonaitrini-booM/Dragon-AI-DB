@@ -9,6 +9,10 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Insert a test user
+INSERT INTO users (email, name, password_hash, role) VALUES
+('test@example.com', 'Test User', '$2b$12$t3Boi/59sZ0H8gokK3707eYxq8.mRBEXS.dRV1OW1Bbdo/1PFef0C', 'admin');
+
 -- Sample data table
 CREATE TABLE sales_data (
     id SERIAL PRIMARY KEY,
