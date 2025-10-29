@@ -1,13 +1,35 @@
-# multi-stage build for Trini pipeline
-FROM golang:1.21-alpine AS build
-WORKDIR /src
-COPY . .
-RUN go build -o /out/trini-pipeline main.go processor.go
+# Stage 1: Build the Go backend
+FROM golang:1.21-alpine AS builder
 
-FROM alpine:latest
-RUN apk add --no-cache ca-certificates
-COPY --from=build /out/trini-pipeline /usr/local/bin/trini-pipeline
 WORKDIR /app
-RUN mkdir -p /app/input /app/output
-VOLUME ["/app/input", "/app/output"]
-ENTRYPOINT ["/usr/local/bin/trini-pipeline"]
+
+# Copy backend source code
+COPY backend .
+
+# Download dependencies
+RUN cd cmd/server && go mod tidy
+
+# Build the backend
+RUN cd cmd/server && CGO_ENABLED=0 GOOS=linux go build -o /server
+
+# Stage 2: Build the final image with backend and frontend
+FROM nginx:alpine
+
+# Install supervisord
+RUN apk --no-cache add supervisor
+
+# Copy the Go binary from the builder stage
+COPY --from=builder /server /usr/local/bin/server
+
+# Copy the frontend files
+COPY frontend /usr/share/nginx/html
+
+# Copy nginx and supervisord configs
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Expose the port Hugging Face requires
+EXPOSE 7860
+
+# Start supervisord
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
