@@ -7,9 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-test-go:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up Go
@@ -22,4 +21,21 @@ jobs:
       run: go vet ./...
     - name: Test
       run: |
-        if [ -f "*_test.go" ]; then go test ./...; else echo "No tests"; fi
+        if find . -name '*_test.go' | read; then go test ./...; else echo "No tests found"; fi
+
+  deploy-worker:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: build-and-test-go
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - name: Install Dependencies
+        run: npm install
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run deploy-worker
