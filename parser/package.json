@@ -1,0 +1,19 @@
+{
+  "name": "parser",
+  "version": "1.o.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "remark": "^14.0.2",
+    "remark-gfm": "^3.0.1",
+    "to-vfile": "^7.2.3",
+    "fs-extra": "^10.1.0"
+  }
+}
